@@ -23,7 +23,8 @@ namespace StudentTeamPlatform.Api.Controllers
             {
                 return Unauthorized("Не знайдено Id");
             }
-            var profile=await _profileService.GetUserProfileAsync(int.Parse(userId));
+            if (!int.TryParse(userId, out int parsedUserId)) return Unauthorized("Некоректний токен");
+            var profile=await _profileService.GetUserProfileAsync(parsedUserId);
             if (profile == null)
             {
                 return NotFound("Не знайдено користувача з таким Id");
@@ -36,7 +37,8 @@ namespace StudentTeamPlatform.Api.Controllers
         {
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) { return Unauthorized("Не знайдено Id"); }
-            bool isUpdated = await _profileService.UpdateProfileAsync(updateUserProfile, int.Parse(userId));
+            if (!int.TryParse(userId, out int parsedUserId)) return Unauthorized("Некоректний токен");
+            bool isUpdated = await _profileService.UpdateProfileAsync(updateUserProfile, parsedUserId);
             if (!isUpdated)
             {
                 return NotFound("Не знайдено користувача з таким Id");

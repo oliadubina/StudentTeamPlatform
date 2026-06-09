@@ -89,10 +89,11 @@ namespace StudentTeamPlatform.Api.Services
                 ProjectRoles = listProjectRoles,
                 Technology = listTechnologies
             };
-            if(IsAuthor)
+            /*if(IsAuthor)
             {
 
-            }
+            }*/
+            return responseDTO;
         }
         public async Task<bool> CreateProjectAsync(CreateProjectDTO createProjectDTO, int authorId)
         {
@@ -133,5 +134,58 @@ namespace StudentTeamPlatform.Api.Services
             return true;
            
         }
+        public async Task<bool> UpdateProjectAsync(UpdateProjectDTO updateProjectDTO, int authorId)
+        {
+            if(updateProjectDTO == null || authorId==0)
+            {
+                return false;
+            }
+            var project =await _appDbContext.Projects.Where(p=> p.Id==updateProjectDTO.Id)
+                .Include(p => p.ProjectRoles)
+                .Include(p=>p.Contributors)
+                .Include(p=>p.Technologies).FirstOrDefaultAsync();
+            if (project == null|| project.AuthorId!=authorId)
+            {
+                return false;
+            }
+            project.Title = updateProjectDTO.Title;
+            project.Description = updateProjectDTO.Description;
+            project.ProjectState = updateProjectDTO.ProjectState;
+            project.ProjectType = updateProjectDTO.ProjectType;
+            project.WorkFormat = updateProjectDTO.WorkFormat;
+            project.Language = updateProjectDTO.Language;
+            var listTechnologies = updateProjectDTO.Technologies.Select(t => new Technology
+            {
+                Name = t.Name
+            }).ToList();
+            project.Technologies= listTechnologies;
+            if(project.Contributors.Any()==false)
+            {
+                _appDbContext.ProjectRoles.RemoveRange(project.ProjectRoles);
+                var newRoles=updateProjectDTO.Roles.Select(role=>new ProjectRole
+                {
+                    Name=role.Name,
+                    SlotsCount=role.SlotsCount,
+                    ProjectId=project.Id
+                }).ToList();
+                await _appDbContext.ProjectRoles.AddRangeAsync(newRoles);
+                project.MaxContributors = updateProjectDTO.MaxContributors;
+            }
+            await _appDbContext.SaveChangesAsync();
+            return true;
+
+        }
+        public async Task<bool> DeleteProjectAsync(int projectId, int authorId)
+        {
+            if (projectId==0 || authorId == 0)
+                { return false; }
+            var project = await _appDbContext.Projects.FirstOrDefaultAsync(p => p.Id==projectId);
+            if (project == null || project.AuthorId!=authorId)
+                { return false; }
+            _appDbContext.Remove(project);
+            await _appDbContext.SaveChangesAsync();
+            return true;
+        }
+
     }
 }

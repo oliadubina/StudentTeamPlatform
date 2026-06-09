@@ -12,7 +12,7 @@ namespace StudentTeamPlatform.Api.DTO
         [Required]
         public string Description { get; set; } = string.Empty;
         [Required]
-        public List<int> TechnologyIds { get; set; } = new List<int>();
+        public List<TechnologyDTO> Technologies { get; set; } = new List<TechnologyDTO>();
         [Required]
         public int MaxContributors { get; set; }
         [Required]

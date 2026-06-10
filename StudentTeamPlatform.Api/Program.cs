@@ -50,6 +50,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IJoinRequestService,  JoinRequestService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

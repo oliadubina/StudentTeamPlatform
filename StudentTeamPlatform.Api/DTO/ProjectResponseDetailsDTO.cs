@@ -5,6 +5,7 @@ namespace StudentTeamPlatform.Api.DTO
     public class ProjectResponseDetailsDTO
     {
         public int Id { get; set; }
+        public AuthorDTO AuthorName {  get; set; }
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public ICollection<TechnologyDTO> Technology { get; set; } = new List<TechnologyDTO>();

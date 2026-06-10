@@ -12,5 +12,6 @@ namespace StudentTeamPlatform.Api.DTO
         public ProjectType ProjectType { get; set; }
         public WorkFormat WorkFormat { get; set; }
         public string Language { get; set; } = string.Empty;
+        public int MatchScore { get; set; }
     }
 }

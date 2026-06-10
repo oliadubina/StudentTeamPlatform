@@ -13,6 +13,8 @@
         public string Speciality { get; set; } = string.Empty;
         public int Course { get; set; } = 0;
         public UserRole Role { get; set; } 
+        public WorkFormat? WorkFormat { get; set; }
+        public string PreferredLanguage { get; set; } = string.Empty;
         public ICollection<Skill> Skills { get; set; } = new List<Skill>();
         public ICollection<Project> Projects { get; set; } = new List<Project>();
         public ICollection<Project> CreatedProjects { get; set; } = new List<Project>();

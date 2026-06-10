@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StudentTeamPlatform.Api.Data;
 
@@ -11,9 +12,11 @@ using StudentTeamPlatform.Api.Data;
 namespace StudentTeamPlatform.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260609203646_ProjectAndTechnologyAndProjectRoles")]
+    partial class ProjectAndTechnologyAndProjectRoles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,36 +68,6 @@ namespace StudentTeamPlatform.Api.Migrations
                     b.HasIndex("UsersId");
 
                     b.ToTable("SkillUser");
-                });
-
-            modelBuilder.Entity("StudentTeamPlatform.Api.Models.JoinRequest", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProjectId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("JoinRequests");
                 });
 
             modelBuilder.Entity("StudentTeamPlatform.Api.Models.Project", b =>
@@ -301,25 +274,6 @@ namespace StudentTeamPlatform.Api.Migrations
                         .HasForeignKey("UsersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("StudentTeamPlatform.Api.Models.JoinRequest", b =>
-                {
-                    b.HasOne("StudentTeamPlatform.Api.Models.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("StudentTeamPlatform.Api.Models.User", "Student")
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Project");
-
-                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("StudentTeamPlatform.Api.Models.Project", b =>

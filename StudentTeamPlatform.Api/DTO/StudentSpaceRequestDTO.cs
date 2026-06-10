@@ -2,11 +2,11 @@
 
 namespace StudentTeamPlatform.Api.DTO
 {
-    public class JoinRequestDTO
+    public class StudentSpaceRequestDTO
     {
-        public int Id { get; set; } 
-        public int StudentId { get; set; }
-        public string StudentName { get; set; } = string.Empty; 
+        public int RequestId { get; set; }
+        public int ProjectId { get; set; }
+        public string ProjectTitle { get; set; } = string.Empty;
         public RequestStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
     }

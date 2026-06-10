@@ -13,8 +13,8 @@ namespace StudentTeamPlatform.Api.Services
         Task<bool>UpdateProjectAsync(UpdateProjectDTO updateProjectDTO, int authorId);
         Task<bool> DeleteProjectAsync(int projectId, int authorId);
 
-        Task<IList<ProjectResponseDTO>> SearchProjectsAsync(ProjectFilterDTO projectFilterDTO);
-        Task<IList<ProjectResponseDTO>> GetRecommendedProjectsAsync(int userId);
+        Task<List<ProjectResponseDTO>> SearchProjectsAsync(ProjectFilterDTO projectFilterDTO);
+        Task<List<ProjectResponseDTO>> GetRecommendedProjectsAsync(int userId);
         
     }
 }

@@ -22,7 +22,9 @@ namespace StudentTeamPlatform.Api.Services
                 University=user.University,
                 Speciality=user.Speciality,
                 Course=user.Course,
-                Skills=user.Skills
+                Skills=user.Skills,
+                PreferredLanguage=user.PreferredLanguage,
+                WorkFormat=user.WorkFormat
 
             };
             return profileResponseDTO;
@@ -36,8 +38,9 @@ namespace StudentTeamPlatform.Api.Services
                 user.Course=updateUserProfile.Course;
                 user.University= updateUserProfile.University;
                 user.Speciality = updateUserProfile.Speciality;
-                user.Skills=updateUserProfile.Skills;
-            
+                user.Skills=updateUserProfile.Skills;   
+                user.WorkFormat=updateUserProfile.WorkFormat;
+                user.PreferredLanguage=updateUserProfile.PreferredLanguage;
             await _appDBContext.SaveChangesAsync();
             return true;
             

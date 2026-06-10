@@ -7,7 +7,7 @@ namespace StudentTeamPlatform.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProfileController : Controller
+    public class ProfileController : ControllerBase
     {
         private readonly IProfileService _profileService;
         public ProfileController(IProfileService profileService)

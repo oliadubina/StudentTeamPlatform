@@ -14,6 +14,7 @@ namespace StudentTeamPlatform.Api.Data
         public DbSet<Technology> Technologies { get; set; }
         public DbSet<ProjectRole> ProjectRoles { get; set; }
         public DbSet<JoinRequest> JoinRequests { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>().Property(user => user.Role).HasConversion<string>();
@@ -24,6 +25,11 @@ namespace StudentTeamPlatform.Api.Data
             modelBuilder.Entity<Project>().HasOne(p=>p.Author).WithMany(p=>p.CreatedProjects).HasForeignKey(p=>p.AuthorId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Project>().HasMany(p => p.Contributors).WithMany(u => u.Projects);
             modelBuilder.Entity<JoinRequest>().Property(j=>j.Status).HasConversion<string>();
+            modelBuilder.Entity<JoinRequest>()
+                        .HasOne(jr => jr.ProjectRole)
+                        .WithMany()
+                        .HasForeignKey(jr => jr.ProjectRoleId)
+                        .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -46,7 +46,7 @@ namespace StudentTeamPlatform.Api.Controllers
             var myJoinedProjects = await _projectService.GetJoinedProjectsAsync(parsedUserId);
             return Ok(myJoinedProjects);
         }
-        [HttpGet("project")]
+        [HttpGet("{projectId}")]
         [Authorize]
         public async Task<IActionResult> GetProjectByIdAsync(int projectId)
         {
@@ -57,7 +57,7 @@ namespace StudentTeamPlatform.Api.Controllers
             }
             if (!int.TryParse(userId, out int parsedUserId)) return Unauthorized("Некоректний токен");
             var project = await _projectService.GetProjectByIdAsync(projectId, parsedUserId);
-            if(project == null) return NotFound();
+            if (project == null) return NotFound();
             return Ok(project);
         }
         [HttpPost("create-project")]
@@ -70,7 +70,7 @@ namespace StudentTeamPlatform.Api.Controllers
                 return Unauthorized("Не знайдено Id");
             }
             if (!int.TryParse(userId, out int parsedUserId)) return Unauthorized("Некоректний токен");
-            bool isCreated= await _projectService.CreateProjectAsync(createProjectDTO, parsedUserId);
+            bool isCreated = await _projectService.CreateProjectAsync(createProjectDTO, parsedUserId);
             if (!isCreated)
             {
                 return BadRequest("Не вдалося створити проєкт");
@@ -94,7 +94,7 @@ namespace StudentTeamPlatform.Api.Controllers
             }
             return Ok(updateProjectDTO);
         }
-        [HttpDelete("delete-project")]
+        [HttpDelete("{projectId}")]
         [Authorize]
         public async Task<IActionResult> DeleteProjectAsync(int projectId)
         {
@@ -105,7 +105,7 @@ namespace StudentTeamPlatform.Api.Controllers
             }
             if (!int.TryParse(userId, out int parsedUserId)) return Unauthorized("Некоректний токен");
             bool IsDeleted = await _projectService.DeleteProjectAsync(projectId, parsedUserId);
-            if(!IsDeleted)
+            if (!IsDeleted)
             {
                 return BadRequest("Не вдалося видалити проєкт (можливо, його не існує, ви не автор, або в ньому є учасники)");
             }
@@ -130,6 +130,33 @@ namespace StudentTeamPlatform.Api.Controllers
             if (!int.TryParse(userId, out int parsedUserId)) return Unauthorized("Некоректний токен");
             var recomendedProjects = await _projectService.GetRecommendedProjectsAsync(parsedUserId);
             return Ok(recomendedProjects);
+        }
+        // Додаємо ендпоінт для видалення учасника / виходу з команди
+        [HttpDelete("{projectId}/contributors/{studentId}")]
+        [Authorize]
+        public async Task<IActionResult> RemoveContributorAsync(int projectId, int studentId)
+        {
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized("Не знайдено Id у токені");
+            if (!int.TryParse(userId, out int parsedUserId)) return Unauthorized("Некоректний токен");
+
+            // Викликаємо метод сервісу
+            bool isRemoved = await _projectService.RemoveContributorAsync(projectId, studentId, parsedUserId);
+
+            if (!isRemoved)
+            {
+                return BadRequest("Не вдалося виконати дію. Перевірте права доступу або наявність користувача в проєкті.");
+            }
+
+            return Ok(new { message = "Учасник успішно покинув проєкт (або був видалений), вільні місця відновлено!" });
+        }
+        [HttpGet("{projectId}/chat-history")]
+        [Authorize]
+        public async Task<IActionResult> GetChatHistory(int projectId)
+        {
+            // Витягуємо всі повідомлення для конкретного проєкту, сортуємо за датою (старіші зверху)
+            var messages = await _projectService.GetChatHistoryAsync(projectId);
+            return Ok(messages);
         }
     }
 }

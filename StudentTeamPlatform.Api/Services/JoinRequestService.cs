@@ -12,29 +12,40 @@ namespace StudentTeamPlatform.Api.Services
         {
             _appDbContext = appDbContext;
         }
-        public async Task<bool> ApplyForProjectAsync(int projectId, int studentId)
+        // Додаємо параметр roleId
+        public async Task<bool> ApplyForProjectAsync(int projectId, int studentId, int roleId)
         {
-            if (projectId == 0 || studentId==0)
-            {
-                return false;
-            }
+            if (projectId == 0 || studentId == 0 || roleId == 0) return false;
+
             var project = await _appDbContext.Projects
                 .Include(p => p.Contributors)
+                .Include(p => p.ProjectRoles) // Підтягуємо ролі
                 .FirstOrDefaultAsync(p => p.Id == projectId);
 
-            // Перевірки бізнес-логіки:
-            if (project == null || project.ProjectState != ProjectState.SearchTeam) return false; 
-            if (project.AuthorId == studentId) return false; 
-            if (project.Contributors.Any(c => c.Id == studentId)) return false; 
-            bool isItNotFirstRequest = await _appDbContext.JoinRequests.AnyAsync(j=>j.ProjectId==projectId && j.StudentId==studentId);
-            if (isItNotFirstRequest) { return false; }
-            JoinRequest joinRequest =new JoinRequest()
+            if (project == null || project.ProjectState != ProjectState.SearchTeam) return false;
+            if (project.AuthorId == studentId) return false;
+            if (project.Contributors.Any(c => c.Id == studentId)) return false;
+
+            // ЗАКРИВАЄМО ПРОГАЛИНУ: Перевіряємо, чи існує така роль і чи є на ній вільні місця!
+            var role = project.ProjectRoles.FirstOrDefault(r => r.Id == roleId);
+            if (role == null || role.SlotsCount <= 0)
+            {
+                return false; // Місць на цю роль уже немає, заявка скасовується
+            }
+
+            bool isItNotFirstRequest = await _appDbContext.JoinRequests
+                .AnyAsync(j => j.ProjectId == projectId && j.StudentId == studentId);
+            if (isItNotFirstRequest) return false;
+
+            JoinRequest joinRequest = new JoinRequest()
             {
                 ProjectId = projectId,
                 StudentId = studentId,
+                ProjectRoleId = roleId, // Зберігаємо роль, на яку подався студент
                 CreatedAt = DateTime.UtcNow,
                 Status = RequestStatus.Pending
             };
+
             await _appDbContext.JoinRequests.AddAsync(joinRequest);
             await _appDbContext.SaveChangesAsync();
             return true;

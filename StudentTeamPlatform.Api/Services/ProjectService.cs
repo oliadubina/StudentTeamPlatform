@@ -337,5 +337,73 @@ namespace StudentTeamPlatform.Api.Services
 
             return recomendationList.OrderByDescending(p => p.MatchScore).Take(10).ToList();
         }
+        // Метод, щоб автор міг вигнати учасника (або студент міг вийти сам, якщо authorId == studentId)
+        public async Task<bool> RemoveContributorAsync(int projectId, int studentId, int currentUserId)
+        {
+            var project = await _appDbContext.Projects
+                .Include(p => p.Contributors)
+                .Include(p => p.ProjectRoles) // Підтягуємо ролі
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            if (project == null) return false;
+
+            // Перевірка прав: це може зробити або автор проєкту, або сам студент (хоче вийти)
+            if (project.AuthorId != currentUserId && studentId != currentUserId) return false;
+
+            var student = project.Contributors.FirstOrDefault(c => c.Id == studentId);
+            if (student == null) return false; // Такого студента немає в команді
+
+            // 1. Видаляємо студента з учасників
+            project.Contributors.Remove(student);
+
+            // 2. ШУКАЄМО ПРОГАЛИНУ: Яку роль він займав?
+            var acceptedRequest = await _appDbContext.JoinRequests
+                .FirstOrDefaultAsync(r => r.ProjectId == projectId && r.StudentId == studentId && r.Status == RequestStatus.Accepted);
+
+            if (acceptedRequest != null)
+            {
+                var role = project.ProjectRoles.FirstOrDefault(r => r.Id == acceptedRequest.ProjectRoleId);
+                if (role != null)
+                {
+                    // ПОВЕРТАЄМО МІСЦЕ!
+                    role.SlotsCount++;
+                }
+
+                // Видаляємо заявку (або переводимо в статус Rejected), щоб розірвати зв'язок
+                _appDbContext.JoinRequests.Remove(acceptedRequest);
+            }
+
+            // 3. АВТОМАТИЧНА ЗМІНА СТАТУСУ
+            // Якщо проєкт був у процесі роботи (InProcess), а тепер з'явилося вільне місце —
+            // повертаємо його на ринок (SearchTeam), щоб алгоритм знову почав його рекомендувати!
+            if (project.ProjectState == ProjectState.InProcess)
+            {
+                project.ProjectState = ProjectState.SearchTeam;
+            }
+
+            await _appDbContext.SaveChangesAsync();
+            return true;
+        }
+        public async Task<List<ChatMessageDTO>> GetChatHistoryAsync(int projectId)
+        {
+            // Шукаємо повідомлення, одразу підтягуючи відправника (Sender),
+            // і перетворюємо їх у наші безпечні та легкі DTO
+            var history = await _appDbContext.ChatMessages
+                .Include(m => m.Sender)
+                .Where(m => m.ProjectId == projectId)
+                .OrderBy(m => m.SentAt) // Старі повідомлення зверху, нові - знизу
+                .Select(m => new ChatMessageDTO
+                {
+                    Id = m.Id,
+                    ProjectId = m.ProjectId,
+                    SenderId = m.SenderId,
+                    SenderName = m.Sender.FullName,
+                    Text = m.Text,
+                    SentAt = m.SentAt
+                })
+                .ToListAsync();
+
+            return history;
+        }
     }
 }

@@ -45,6 +45,17 @@ namespace StudentTeamPlatform.Api.Controllers
             }
             return Ok(updateUserProfile);
         }
-
+        // Додаємо ендпоінт для перегляду публічного профілю будь-якого студента за Id
+        [HttpGet("user/{userId}")]
+        [Authorize]
+        public async Task<IActionResult> GetExternalUserProfileAsync(int userId)
+        {
+            var profile = await _profileService.GetUserProfileAsync(userId);
+            if (profile == null)
+            {
+                return NotFound("Користувача з таким Id не знайдено");
+            }
+            return Ok(profile);
+        }
     }
 }

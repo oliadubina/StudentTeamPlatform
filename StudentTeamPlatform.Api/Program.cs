@@ -53,6 +53,16 @@ builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IJoinRequestService,  JoinRequestService>();
 builder.Services.AddSignalR();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // Адреса нашого майбутнього React
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // КРИТИЧНО для роботи чату на SignalR!
+    });
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -65,6 +75,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
+app.UseCors("AllowReactApp");
 
 app.UseAuthorization();
 

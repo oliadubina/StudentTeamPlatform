@@ -33,7 +33,7 @@
         public WorkFormat WorkFormat {  get; set; }
         public string Language { get; set; } = string.Empty;
         public int AuthorId {  get; set; }
-        public User Author { get; set; } = new User();
+        public User Author { get; set; } = null!;
         public ICollection<ProjectRole> ProjectRoles { get; set; } = new List<ProjectRole>();
         public ICollection<User> Contributors { get; set; } = new List<User>();
         

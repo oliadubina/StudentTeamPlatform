@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+п»їusing Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -7,21 +7,43 @@ using StudentTeamPlatform.Api.Hubs;
 using StudentTeamPlatform.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddAuthentication().AddJwtBearer(options => options.TokenValidationParameters=new TokenValidationParameters
+builder.Services.AddAuthentication().AddJwtBearer(options =>
 {
-    ValidateIssuerSigningKey = true,
-    IssuerSigningKey=new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration.GetSection("Jwt:Key").Value!)),
-    ValidateIssuer=false,
-    ValidateAudience=false
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration.GetSection("Jwt:Key").Value!)),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
 
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
 });
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+.AddJsonOptions(options =>
+ {
+     // Р”РѕРґР°С”РјРѕ РєРѕРЅРІРµСЂС‚РµСЂ, С‰РѕР± C# СЂРѕР·СѓРјС–РІ enums СЏРє СЂСЏРґРєРё (РЅР°РїСЂ., "Online" Р·Р°РјС–СЃС‚СЊ 0)
+     options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+ });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    // 1. Описуємо схему безпеки (JWT Bearer)
+    // 1. РћРїРёСЃСѓС”РјРѕ СЃС…РµРјСѓ Р±РµР·РїРµРєРё (JWT Bearer)
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -29,10 +51,10 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Введи токен у форматі: Bearer {твій_токен}"
+        Description = "Р’РІРµРґРё С‚РѕРєРµРЅ Сѓ С„РѕСЂРјР°С‚С–: Bearer {С‚РІС–Р№_С‚РѕРєРµРЅ}"
     });
 
-    // 2. Робимо так, щоб захист застосовувався до ендпоінтів
+    // 2. Р РѕР±РёРјРѕ С‚Р°Рє, С‰РѕР± Р·Р°С…РёСЃС‚ Р·Р°СЃС‚РѕСЃРѕРІСѓРІР°РІСЃСЏ РґРѕ РµРЅРґРїРѕС–РЅС‚С–РІ
     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
     {
         {
@@ -57,10 +79,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // Адреса нашого майбутнього React
+        policy.WithOrigins("http://localhost:5173","http://localhost:5174", "http://localhost:5175") // РђРґСЂРµСЃР° РЅР°С€РѕРіРѕ РјР°Р№Р±СѓС‚РЅСЊРѕРіРѕ React
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials(); // КРИТИЧНО для роботи чату на SignalR!
+              .AllowCredentials(); // РљР РРўРР§РќРћ РґР»СЏ СЂРѕР±РѕС‚Рё С‡Р°С‚Сѓ РЅР° SignalR!
     });
 });
 var app = builder.Build();
@@ -74,9 +96,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
-
 app.UseCors("AllowReactApp");
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

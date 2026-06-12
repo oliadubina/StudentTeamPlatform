@@ -71,12 +71,19 @@ namespace StudentTeamPlatform.Api.Services
             bool IsContributor=project.Contributors.Any(c=>c.Id==currentUserId);
             var listProjectRoles = project.ProjectRoles.Select(role =>new ProjectRoleDTO
             {
+                Id=role.Id,
                 Name= role.Name,
                 SlotsCount= role.SlotsCount
             }).ToList();
             var listTechnologies = project.Technologies.Select(t => new TechnologyDTO
             {
                 Name = t.Name
+            }).ToList();
+            var contributors = project.Contributors.Select(contributor => new ContributorsDTO
+            {
+                Id = contributor.Id,
+                FullName = contributor.FullName,
+                Email = contributor.Email
             }).ToList();
             AuthorDTO authorName = new AuthorDTO()
             {
@@ -97,7 +104,8 @@ namespace StudentTeamPlatform.Api.Services
                 WorkFormat = project.WorkFormat,
                 MaxContributors = project.MaxContributors,
                 ProjectRoles = listProjectRoles,
-                Technology = listTechnologies
+                Technology = listTechnologies,
+                Contributors = contributors
             };
             if(IsAuthor)
             {
@@ -226,7 +234,7 @@ namespace StudentTeamPlatform.Api.Services
                 var techNames = projectFilterDTO.Technologies.Select(t => t.Name.ToLower()).ToList();
                 projects = projects.Where(p => p.Technologies.Any(pt => techNames.Contains(pt.Name.ToLower())));
             }
-            if (projectFilterDTO.Role!=null)
+            if (!string.IsNullOrWhiteSpace(projectFilterDTO.Role))
             {
                 projects=projects.Where(p=>p.ProjectRoles.Any(r=>r.Name==projectFilterDTO.Role && r.SlotsCount>0)).Include(p => p.Technologies);
             }
@@ -404,6 +412,30 @@ namespace StudentTeamPlatform.Api.Services
                 .ToListAsync();
 
             return history;
+        }
+        public async Task<List<ChatProjectDTO>> GetChatProjectsAsync(int userId)
+        {
+            if (userId == 0)
+            {
+                return new List<ChatProjectDTO>();
+            }
+
+            return await _appDbContext.Projects
+                .Where(project => project.AuthorId == userId || project.Contributors.Any(contributor => contributor.Id == userId))
+                .Select(project => new ChatProjectDTO
+                {
+                    ProjectId = project.Id,
+                    Title = project.Title,
+                    IsAuthor = project.AuthorId == userId,
+                    LastMessageAt = _appDbContext.ChatMessages
+                        .Where(message => message.ProjectId == project.Id)
+                        .OrderByDescending(message => message.SentAt)
+                        .Select(message => (DateTime?)message.SentAt)
+                        .FirstOrDefault()
+                })
+                .OrderByDescending(project => project.LastMessageAt ?? DateTime.MinValue)
+                .ThenBy(project => project.Title)
+                .ToListAsync();
         }
     }
 }

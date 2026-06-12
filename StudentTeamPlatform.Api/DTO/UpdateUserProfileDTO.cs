@@ -14,7 +14,7 @@ namespace StudentTeamPlatform.Api.DTO
         [Required]
         public int Course { get; set; }
         [Required]
-        public ICollection<Skill>? Skills { get; set; }
+        public ICollection<SkillDTO>? Skills { get; set; }
         [Required]
         public WorkFormat? WorkFormat { get; set; }
         [Required]

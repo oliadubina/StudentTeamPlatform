@@ -4,6 +4,8 @@ namespace StudentTeamPlatform.Api.DTO
 {
     public class ProjectRoleDTO
     {
+        public int Id { get; set; }
+
         [Required]
         public string Name { get; set; } = string.Empty;
 

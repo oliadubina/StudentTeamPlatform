@@ -17,5 +17,6 @@ namespace StudentTeamPlatform.Api.Services
         Task<List<ProjectResponseDTO>> GetRecommendedProjectsAsync(int userId);
         Task<bool> RemoveContributorAsync(int projectId, int studentId, int currentUserId);
         Task<List<ChatMessageDTO>> GetChatHistoryAsync(int projectId);
+        Task<List<ChatProjectDTO>> GetChatProjectsAsync(int userId);
     }
 }

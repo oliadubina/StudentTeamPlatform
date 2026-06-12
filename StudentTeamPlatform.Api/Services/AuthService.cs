@@ -21,14 +21,14 @@ namespace StudentTeamPlatform.Api.Services
         }
         public async Task<string> Register(RegisterRequest registerRequest)
         {
-            if ( await _appDbContext.Users.AnyAsync(u => u.Email==registerRequest.EmailAddress))
+            if ( await _appDbContext.Users.AnyAsync(u => u.Email==registerRequest.Email))
             {
                 return null;
             }
             
             User user = new User()
             {
-                Email = registerRequest.EmailAddress,
+                Email = registerRequest.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerRequest.Password),
                 FullName = registerRequest.FullName,           
             };

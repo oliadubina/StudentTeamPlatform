@@ -56,13 +56,19 @@ namespace StudentTeamPlatform.Api.Services
             {
                 return new List<JoinRequestDTO>();
             }
-            var requestList= await _appDbContext.JoinRequests.Include(r => r.Student).Where(r=> r.ProjectId==projectId && r.Project.AuthorId==authorId).ToListAsync();
+            var requestList= await _appDbContext.JoinRequests
+                .Include(r => r.Student)
+                .Include(r => r.ProjectRole)
+                .Where(r=> r.ProjectId==projectId && r.Project.AuthorId==authorId)
+                .ToListAsync();
             
             var listofRequestsDTO=requestList.Select(request=>new JoinRequestDTO
             {
                 Id = request.Id,
                 StudentId=request.StudentId,
                 StudentName = request.Student.FullName,
+                ProjectRoleId=request.ProjectRoleId,
+                ProjectRoleName=request.ProjectRole.Name,
                 Status=request.Status,
                 CreatedAt=request.CreatedAt
             }).ToList();
@@ -75,6 +81,7 @@ namespace StudentTeamPlatform.Api.Services
             if(request==null) { return false; }
             var project = await _appDbContext.Projects
                 .Include(p => p.Contributors)
+                .Include(p => p.ProjectRoles)
                 .FirstOrDefaultAsync(p => p.Id == request.ProjectId && p.AuthorId == authorId);
             if (project!=null)
             {
@@ -95,6 +102,7 @@ namespace StudentTeamPlatform.Api.Services
                     {
                         project.Contributors.Add(student);
                     }
+                    request.Status = status;
 
                     // АВТОМАТИЧНА ЗМІНА СТАТУСУ ПРОЄКТУ:
                     // Якщо після цього в базі не залишилося жодної ролі з вільними місцями (усі SlotsCount == 0)

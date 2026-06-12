@@ -6,9 +6,9 @@ namespace StudentTeamPlatform.Api.DTO
     {
         [Required]
         [EmailAddress]
-        public string EmailAddress { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
         [Required]
-        [StringLength(8)]
+        [MinLength(8, ErrorMessage = "Пароль має містити мінімум 8 символів")]
         public string Password { get; set; } = string.Empty;
         [Required]
         public string FullName { get; set; }= string.Empty;

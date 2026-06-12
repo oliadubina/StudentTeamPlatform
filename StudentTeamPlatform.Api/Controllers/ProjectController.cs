@@ -94,6 +94,25 @@ namespace StudentTeamPlatform.Api.Controllers
             }
             return Ok(updateProjectDTO);
         }
+        [HttpPut("{projectId}/complete")]
+        [Authorize]
+        public async Task<IActionResult> CompleteProjectAsync(int projectId)
+        {
+            var userId = GetUserId();
+            if (userId == null)
+            {
+                return Unauthorized("Не знайдено Id");
+            }
+            if (!int.TryParse(userId, out int parsedUserId)) return Unauthorized("Некоректний токен");
+
+            bool isCompleted = await _projectService.CompleteProjectAsync(projectId, parsedUserId);
+            if (!isCompleted)
+            {
+                return BadRequest("Не вдалося завершити проєкт. Перевірте права доступу або поточний статус проєкту.");
+            }
+
+            return Ok(new { message = "Проєкт завершено. Учасники можуть залишити відгуки." });
+        }
         [HttpDelete("{projectId}")]
         [Authorize]
         public async Task<IActionResult> DeleteProjectAsync(int projectId)

@@ -11,6 +11,7 @@ namespace StudentTeamPlatform.Api.Services
 
         Task<bool> CreateProjectAsync(CreateProjectDTO createProjectDTO, int authorId);
         Task<bool> UpdateProjectAsync(UpdateProjectDTO updateProjectDTO, int authorId);
+        Task<bool> CompleteProjectAsync(int projectId, int authorId);
         Task<bool> DeleteProjectAsync(int projectId, int authorId);
 
         Task<List<ProjectResponseDTO>> SearchProjectsAsync(ProjectFilterDTO projectFilterDTO);

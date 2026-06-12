@@ -39,6 +39,7 @@ const getUserFromToken = (token) => {
 
 const getInitialUser = () => {
   const token = localStorage.getItem('token')
+  const refreshToken = localStorage.getItem('refreshToken')
 
   if (!token) {
     return null
@@ -47,7 +48,12 @@ const getInitialUser = () => {
   const user = getUserFromToken(token)
 
   if (!user) {
+    if (refreshToken) {
+      return decodeJwtPayload(token) || { token }
+    }
+
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
   }
 
   return user
@@ -56,14 +62,18 @@ const getInitialUser = () => {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(getInitialUser)
 
-  const login = useCallback((token) => {
+  const login = useCallback((token, refreshToken) => {
     if (!token || typeof token !== 'string') {
       localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
       setCurrentUser(null)
       return null
     }
 
     localStorage.setItem('token', token)
+    if (refreshToken && typeof refreshToken === 'string') {
+      localStorage.setItem('refreshToken', refreshToken)
+    }
     const user = getUserFromToken(token) || { token }
 
     setCurrentUser(user)
@@ -72,6 +82,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
     setCurrentUser(null)
   }, [])
 

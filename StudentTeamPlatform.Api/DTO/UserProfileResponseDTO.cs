@@ -19,6 +19,9 @@ namespace StudentTeamPlatform.Api.DTO
         [Required]
         public WorkFormat? WorkFormat { get; set; }
         public string PreferredLanguage { get; set; } = string.Empty;
+        public double AverageRating { get; set; }
+        public int ReviewsCount { get; set; }
+        public ICollection<UserReviewDTO> Reviews { get; set; } = new List<UserReviewDTO>();
 
 
     }

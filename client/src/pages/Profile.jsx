@@ -1,4 +1,4 @@
-import { Plus, Save, UserRound, X } from 'lucide-react'
+import { Plus, Save, Star, UserRound, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 import api from '../api/axiosConfig'
@@ -26,6 +26,17 @@ const normalizeSkill = (skill, index) => ({
   category: getField(skill, 'category', 'Category'),
 })
 
+const normalizeReview = (review) => ({
+  id: getField(review, 'id', 'Id'),
+  projectId: getField(review, 'projectId', 'ProjectId'),
+  projectTitle: getField(review, 'projectTitle', 'ProjectTitle', 'Проєкт'),
+  reviewerId: getField(review, 'reviewerId', 'ReviewerId'),
+  reviewerName: getField(review, 'reviewerName', 'ReviewerName', 'Користувач'),
+  rating: getField(review, 'rating', 'Rating', 0),
+  comment: getField(review, 'comment', 'Comment', ''),
+  createdAt: getField(review, 'createdAt', 'CreatedAt'),
+})
+
 const normalizeProfile = (data) => ({
   fullName: getField(data, 'fullName', 'FullName'),
   email: getField(data, 'emailAddress', 'EmailAddress', getField(data, 'email', 'Email')),
@@ -34,6 +45,9 @@ const normalizeProfile = (data) => ({
   course: getField(data, 'course', 'Course', 0),
   workFormat: getField(data, 'workFormat', 'WorkFormat'),
   preferredLanguage: getField(data, 'preferredLanguage', 'PreferredLanguage'),
+  averageRating: getField(data, 'averageRating', 'AverageRating', 0),
+  reviewsCount: getField(data, 'reviewsCount', 'ReviewsCount', 0),
+  reviews: (getField(data, 'reviews', 'Reviews', []) || []).map(normalizeReview),
   skills: (getField(data, 'skills', 'Skills', []) || []).map(normalizeSkill),
 })
 
@@ -66,6 +80,20 @@ const formatWorkFormat = (value) =>
 const formatLanguage = (value) =>
   LANGUAGE_OPTIONS.find((option) => option.value === value)?.label || value || 'Не вказано'
 
+function RatingStars({ rating }) {
+  return (
+    <div className="flex items-center gap-1 text-amber-500">
+      {[1, 2, 3, 4, 5].map((value) => (
+        <Star
+          className={value <= Math.round(Number(rating)) ? 'fill-current' : ''}
+          key={value}
+          size={16}
+        />
+      ))}
+    </div>
+  )
+}
+
 function ProfileSkeleton() {
   return (
     <div className="grid gap-8 rounded-xl bg-white p-8 shadow-lg lg:grid-cols-[320px_1fr]">
@@ -85,7 +113,6 @@ function ProfileSkeleton() {
           <div className="h-9 w-32 animate-pulse rounded-full bg-slate-100" />
           <div className="h-9 w-20 animate-pulse rounded-full bg-slate-100" />
         </div>
-        <div className="mt-8 h-11 w-44 animate-pulse rounded-lg bg-slate-200" />
       </div>
     </div>
   )
@@ -227,229 +254,264 @@ function Profile() {
   }
 
   return (
-    <div className="grid gap-8 rounded-xl bg-white p-6 shadow-lg md:p-8 lg:grid-cols-[320px_1fr]">
-      <section className="border-b border-slate-200 pb-8 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
-        <div className="flex flex-col items-center text-center">
-          <div className="flex h-28 w-28 items-center justify-center rounded-full bg-blue-600 text-3xl font-bold text-white shadow-md">
-            {initials}
+    <div className="space-y-6">
+      <div className="grid gap-8 rounded-xl bg-white p-6 shadow-lg md:p-8 lg:grid-cols-[320px_1fr]">
+        <section className="border-b border-slate-200 pb-8 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
+          <div className="flex flex-col items-center text-center">
+            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-blue-600 text-3xl font-bold text-white shadow-md">
+              {initials}
+            </div>
+
+            <h1 className="mt-5 text-2xl font-bold text-slate-950">{profile.fullName}</h1>
+            <p className="mt-1 text-sm text-slate-500">{profile.email}</p>
+
+            <div className="mt-4 flex items-center gap-2 rounded-full bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 ring-1 ring-amber-100">
+              <Star className="fill-current" size={16} />
+              {profile.reviewsCount > 0
+                ? `${profile.averageRating} / 5 · відгуків: ${profile.reviewsCount}`
+                : 'Відгуків ще немає'}
+            </div>
           </div>
 
-          <h1 className="mt-5 text-2xl font-bold text-slate-950">{profile.fullName}</h1>
-          <p className="mt-1 text-sm text-slate-500">{profile.email}</p>
-        </div>
-
-        <div className="mt-8 space-y-4">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Формат роботи
-            </p>
-            {isEditing ? (
-              <select
-                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, workFormat: event.target.value }))
-                }
-                value={draft.workFormat || ''}
-              >
-                <option value="">Не вказано</option>
-                {WORK_FORMAT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <p className="mt-1 font-medium text-slate-950">
-                {formatWorkFormat(profile.workFormat)}
+          <div className="mt-8 space-y-4">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Формат роботи
               </p>
+              {isEditing ? (
+                <select
+                  className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, workFormat: event.target.value }))
+                  }
+                  value={draft.workFormat || ''}
+                >
+                  <option value="">Не вказано</option>
+                  {WORK_FORMAT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="mt-1 font-medium text-slate-950">
+                  {formatWorkFormat(profile.workFormat)}
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Мова
+              </p>
+              {isEditing ? (
+                <select
+                  className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, preferredLanguage: event.target.value }))
+                  }
+                  value={draft.preferredLanguage || ''}
+                >
+                  <option value="">Не вказано</option>
+                  {LANGUAGE_OPTIONS.map((language) => (
+                    <option key={language.value} value={language.value}>
+                      {language.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="mt-1 font-medium text-slate-950">
+                  {formatLanguage(profile.preferredLanguage)}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-slate-950">
+                <UserRound size={22} />
+                <h2 className="text-xl font-bold">Мої навички</h2>
+              </div>
+              <p className="mt-1 text-sm text-slate-500">
+                Технології та напрями, у яких ви готові працювати.
+              </p>
+            </div>
+
+            {isEditing ? (
+              <div className="flex gap-2">
+                <button
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  disabled={isSaving}
+                  onClick={handleCancel}
+                  type="button"
+                >
+                  Скасувати
+                </button>
+                <button
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                  disabled={isSaving}
+                  onClick={handleSave}
+                  type="button"
+                >
+                  <Save size={16} />
+                  Зберегти
+                </button>
+              </div>
+            ) : (
+              <button
+                className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                onClick={handleEdit}
+                type="button"
+              >
+                Редагувати профіль
+              </button>
             )}
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Мова
-            </p>
-            {isEditing ? (
-              <select
-                className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, preferredLanguage: event.target.value }))
-                }
-                value={draft.preferredLanguage || ''}
-              >
-                <option value="">Не вказано</option>
-                {LANGUAGE_OPTIONS.map((language) => (
-                  <option key={language.value} value={language.value}>
-                    {language.label}
-                  </option>
-                ))}
-              </select>
+          <div className="mt-6 flex flex-wrap gap-3">
+            {draft.skills.length > 0 ? (
+              draft.skills.map((skill, index) => (
+                <span
+                  className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 ring-1 ring-blue-100"
+                  key={`${skill.localId}-${index}`}
+                >
+                  {skill.name}
+                  <span className="text-blue-400">/{skill.category}</span>
+                  {isEditing && (
+                    <button
+                      className="rounded-full p-0.5 text-blue-500 hover:bg-blue-100 hover:text-blue-800"
+                      disabled={isSaving}
+                      onClick={() => handleRemoveSkill(skill)}
+                      type="button"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </span>
+              ))
             ) : (
-              <p className="mt-1 font-medium text-slate-950">
-                {formatLanguage(profile.preferredLanguage)}
-              </p>
+              <p className="text-sm text-slate-500">Навички ще не додані.</p>
             )}
           </div>
-        </div>
-      </section>
 
-      <section>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-slate-950">
-              <UserRound size={22} />
-              <h2 className="text-xl font-bold">Мої навички</h2>
+          {isEditing && (
+            <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <h3 className="font-semibold text-slate-950">Додати навичку</h3>
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                <input
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  onChange={(event) => setNewSkillName(event.target.value)}
+                  placeholder="React"
+                  type="text"
+                  value={newSkillName}
+                />
+                <input
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  onChange={(event) => setNewSkillCategory(event.target.value)}
+                  placeholder="Frontend"
+                  type="text"
+                  value={newSkillCategory}
+                />
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                  disabled={isSaving}
+                  onClick={handleAddSkill}
+                  type="button"
+                >
+                  <Plus size={16} />
+                  Додати
+                </button>
+              </div>
             </div>
-            <p className="mt-1 text-sm text-slate-500">
-              Технології та напрями, у яких ви готові працювати.
-            </p>
-          </div>
-
-          {isEditing ? (
-            <div className="flex gap-2">
-              <button
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                disabled={isSaving}
-                onClick={handleCancel}
-                type="button"
-              >
-                Скасувати
-              </button>
-              <button
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-                disabled={isSaving}
-                onClick={handleSave}
-                type="button"
-              >
-                <Save size={16} />
-                Зберегти
-              </button>
-            </div>
-          ) : (
-            <button
-              className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-              onClick={handleEdit}
-              type="button"
-            >
-              Редагувати профіль
-            </button>
           )}
-        </div>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          {draft.skills.length > 0 ? (
-            draft.skills.map((skill, index) => (
-              <span
-                className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 ring-1 ring-blue-100"
-                key={`${skill.localId}-${index}`}
-              >
-                {skill.name}
-                <span className="text-blue-400">/{skill.category}</span>
-                {isEditing && (
-                  <button
-                    className="rounded-full p-0.5 text-blue-500 hover:bg-blue-100 hover:text-blue-800"
-                    disabled={isSaving}
-                    onClick={() => handleRemoveSkill(skill)}
-                    type="button"
-                  >
-                    <X size={14} />
-                  </button>
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-lg border border-slate-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Університет
+              </p>
+              {isEditing ? (
+                <input
+                  className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, university: event.target.value }))
+                  }
+                  value={draft.university || ''}
+                />
+              ) : (
+                <p className="mt-1 text-sm font-medium text-slate-950">
+                  {profile.university || 'Не вказано'}
+                </p>
+              )}
+            </div>
+            <div className="rounded-lg border border-slate-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Спеціальність
+              </p>
+              {isEditing ? (
+                <input
+                  className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, speciality: event.target.value }))
+                  }
+                  value={draft.speciality || ''}
+                />
+              ) : (
+                <p className="mt-1 text-sm font-medium text-slate-950">
+                  {profile.speciality || 'Не вказано'}
+                </p>
+              )}
+            </div>
+            <div className="rounded-lg border border-slate-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Курс
+              </p>
+              {isEditing ? (
+                <input
+                  className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  min="1"
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, course: event.target.value }))
+                  }
+                  type="number"
+                  value={draft.course || ''}
+                />
+              ) : (
+                <p className="mt-1 text-sm font-medium text-slate-950">
+                  {profile.course || 'Не вказано'}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section className="rounded-xl bg-white p-6 shadow-lg md:p-8">
+        <h2 className="text-xl font-bold text-slate-950">Відгуки про мене</h2>
+        <div className="mt-5 space-y-4">
+          {profile.reviews.length > 0 ? (
+            profile.reviews.map((review) => (
+              <article className="rounded-lg border border-slate-200 p-4" key={review.id}>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-950">{review.reviewerName}</p>
+                    <p className="text-sm text-slate-500">{review.projectTitle}</p>
+                  </div>
+                  <RatingStars rating={review.rating} />
+                </div>
+                {review.comment && (
+                  <p className="mt-3 text-sm leading-6 text-slate-700">{review.comment}</p>
                 )}
-              </span>
+              </article>
             ))
           ) : (
-            <p className="text-sm text-slate-500">Навички ще не додані.</p>
+            <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">
+              Відгуків поки немає.
+            </p>
           )}
-        </div>
-
-        {isEditing && (
-          <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <h3 className="font-semibold text-slate-950">Додати навичку</h3>
-            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-              <input
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                onChange={(event) => setNewSkillName(event.target.value)}
-                placeholder="React"
-                type="text"
-                value={newSkillName}
-              />
-              <input
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                onChange={(event) => setNewSkillCategory(event.target.value)}
-                placeholder="Frontend"
-                type="text"
-                value={newSkillCategory}
-              />
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-                disabled={isSaving}
-                onClick={handleAddSkill}
-                type="button"
-              >
-                <Plus size={16} />
-                Додати
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-slate-200 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Університет
-            </p>
-            {isEditing ? (
-              <input
-                className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, university: event.target.value }))
-                }
-                value={draft.university || ''}
-              />
-            ) : (
-              <p className="mt-1 text-sm font-medium text-slate-950">
-                {profile.university || 'Не вказано'}
-              </p>
-            )}
-          </div>
-          <div className="rounded-lg border border-slate-200 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Спеціальність
-            </p>
-            {isEditing ? (
-              <input
-                className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, speciality: event.target.value }))
-                }
-                value={draft.speciality || ''}
-              />
-            ) : (
-              <p className="mt-1 text-sm font-medium text-slate-950">
-                {profile.speciality || 'Не вказано'}
-              </p>
-            )}
-          </div>
-          <div className="rounded-lg border border-slate-200 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Курс
-            </p>
-            {isEditing ? (
-              <input
-                className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                min="1"
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, course: event.target.value }))
-                }
-                type="number"
-                value={draft.course || ''}
-              />
-            ) : (
-              <p className="mt-1 text-sm font-medium text-slate-950">
-                {profile.course || 'Не вказано'}
-              </p>
-            )}
-          </div>
         </div>
       </section>
     </div>

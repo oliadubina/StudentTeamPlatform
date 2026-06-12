@@ -21,6 +21,24 @@ namespace StudentTeamPlatform.Api.Services
                 Name = skill.Name,
                 Category=skill.Category
             }).ToList();
+            var reviews = await _appDBContext.ProjectReviews
+                .AsNoTracking()
+                .Include(review => review.Project)
+                .Include(review => review.Reviewer)
+                .Where(review => review.RevieweeId == userId)
+                .OrderByDescending(review => review.CreatedAt)
+                .Select(review => new UserReviewDTO
+                {
+                    Id = review.Id,
+                    ProjectId = review.ProjectId,
+                    ProjectTitle = review.Project.Title,
+                    ReviewerId = review.ReviewerId,
+                    ReviewerName = review.Reviewer.FullName,
+                    Rating = review.Rating,
+                    Comment = review.Comment,
+                    CreatedAt = review.CreatedAt
+                })
+                .ToListAsync();
             UserProfileResponseDTO profileResponseDTO = new UserProfileResponseDTO()
             {
                 EmailAddress=user.Email,
@@ -30,7 +48,10 @@ namespace StudentTeamPlatform.Api.Services
                 Course=user.Course,
                 Skills=skills,
                 PreferredLanguage=user.PreferredLanguage,
-                WorkFormat=user.WorkFormat
+                WorkFormat=user.WorkFormat,
+                Reviews = reviews,
+                ReviewsCount = reviews.Count,
+                AverageRating = reviews.Count > 0 ? Math.Round(reviews.Average(review => review.Rating), 1) : 0
 
             };
             return profileResponseDTO;

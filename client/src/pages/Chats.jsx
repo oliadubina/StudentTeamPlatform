@@ -74,6 +74,7 @@ function Chats() {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const connectionRef = useRef(null)
+  const activeProjectIdRef = useRef(null)
   const messagesEndRef = useRef(null)
 
   const currentUserId = useMemo(() => getCurrentUserId(), [])
@@ -81,6 +82,10 @@ function Chats() {
     () => chats.find((chat) => chat.projectId === activeProjectId),
     [activeProjectId, chats],
   )
+
+  useEffect(() => {
+    activeProjectIdRef.current = activeProjectId
+  }, [activeProjectId])
 
   const fetchChats = useCallback(async () => {
     setIsLoadingChats(true)
@@ -143,6 +148,7 @@ function Chats() {
 
   useEffect(() => {
     const token = localStorage.getItem('token')
+    let isCancelled = false
 
     if (!token) {
       return undefined
@@ -159,7 +165,7 @@ function Chats() {
       const normalizedMessage = normalizeMessage(message)
 
       setMessages((current) =>
-        normalizedMessage.projectId === activeProjectId
+        normalizedMessage.projectId === activeProjectIdRef.current
           ? [...current, normalizedMessage]
           : current,
       )
@@ -168,22 +174,24 @@ function Chats() {
     connection
       .start()
       .then(() => {
-        connectionRef.current = connection
-        if (activeProjectId) {
-          return connection.invoke('JoinProjectChat', String(activeProjectId))
+        if (!isCancelled) {
+          connectionRef.current = connection
         }
-
-        return undefined
       })
       .catch(() => {
-        toast.error('Не вдалося підключитися до чату')
+        if (!isCancelled) {
+          toast.error('Не вдалося підключитися до чату')
+        }
       })
 
     return () => {
+      isCancelled = true
       connection.stop()
-      connectionRef.current = null
+      if (connectionRef.current === connection) {
+        connectionRef.current = null
+      }
     }
-  }, [activeProjectId])
+  }, [])
 
   useEffect(() => {
     const connection = connectionRef.current
@@ -192,8 +200,10 @@ function Chats() {
       return
     }
 
-    connection.invoke('JoinProjectChat', String(activeProjectId)).catch(() => {
-      toast.error('Не вдалося приєднатися до чату проєкту')
+    connection.invoke('JoinProjectChat', String(activeProjectId)).catch((error) => {
+      if (connection.state === HubConnectionState.Connected) {
+        toast.error(error?.message || 'Не вдалося приєднатися до чату проєкту')
+      }
     })
   }, [activeProjectId])
 

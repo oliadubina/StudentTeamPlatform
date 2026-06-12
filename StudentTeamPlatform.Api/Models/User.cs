@@ -9,6 +9,8 @@
         public string FullName {  get; set; }= string.Empty;
         public string Email { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiresAt { get; set; }
         public string University { get; set; } = string.Empty;
         public string Speciality { get; set; } = string.Empty;
         public int Course { get; set; } = 0;

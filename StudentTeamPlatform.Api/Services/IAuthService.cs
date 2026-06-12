@@ -4,7 +4,8 @@ namespace StudentTeamPlatform.Api.Services
 {
     public interface IAuthService
     {
-        Task<string?> Register(RegisterRequest registerRequest);
-        Task<string?> Login(LoginRequest loginRequest);
+        Task<AuthResponseDTO?> Register(RegisterRequest registerRequest);
+        Task<AuthResponseDTO?> Login(LoginRequest loginRequest);
+        Task<AuthResponseDTO?> RefreshToken(string refreshToken);
     }
 }

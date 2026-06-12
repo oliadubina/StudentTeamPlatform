@@ -19,6 +19,9 @@ const getTokenFromResponse = (data) => {
   return data?.token || data?.Token || data?.accessToken || data?.jwt
 }
 
+const getRefreshTokenFromResponse = (data) =>
+  data?.refreshToken || data?.RefreshToken
+
 function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -38,13 +41,14 @@ function Login() {
     try {
       const response = await api.post('/api/auth/login', values)
       const token = getTokenFromResponse(response.data)
+      const refreshToken = getRefreshTokenFromResponse(response.data)
 
       if (!token) {
         toast.error('Сервер не повернув JWT-токен')
         return
       }
 
-      login(token)
+      login(token, refreshToken)
       toast.success('Ви успішно увійшли!')
       navigate('/profile')
     } catch (error) {

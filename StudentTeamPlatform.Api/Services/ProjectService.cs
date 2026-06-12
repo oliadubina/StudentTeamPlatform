@@ -194,6 +194,25 @@ namespace StudentTeamPlatform.Api.Services
             return true;
 
         }
+        public async Task<bool> CompleteProjectAsync(int projectId, int authorId)
+        {
+            if (projectId == 0 || authorId == 0)
+            {
+                return false;
+            }
+
+            var project = await _appDbContext.Projects.FirstOrDefaultAsync(project => project.Id == projectId);
+            if (project == null || project.AuthorId != authorId || project.ProjectState == ProjectState.Done)
+            {
+                return false;
+            }
+
+            project.ProjectState = ProjectState.Done;
+            project.UpdatedAt = DateTime.UtcNow;
+            await _appDbContext.SaveChangesAsync();
+
+            return true;
+        }
         public async Task<bool> DeleteProjectAsync(int projectId, int authorId)
         {
             if (projectId==0 || authorId == 0)
@@ -421,7 +440,9 @@ namespace StudentTeamPlatform.Api.Services
             }
 
             return await _appDbContext.Projects
-                .Where(project => project.AuthorId == userId || project.Contributors.Any(contributor => contributor.Id == userId))
+                .Where(project =>
+                    project.ProjectState != ProjectState.Done &&
+                    (project.AuthorId == userId || project.Contributors.Any(contributor => contributor.Id == userId)))
                 .Select(project => new ChatProjectDTO
                 {
                     ProjectId = project.Id,

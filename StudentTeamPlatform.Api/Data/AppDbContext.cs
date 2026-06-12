@@ -15,6 +15,7 @@ namespace StudentTeamPlatform.Api.Data
         public DbSet<ProjectRole> ProjectRoles { get; set; }
         public DbSet<JoinRequest> JoinRequests { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<ProjectReview> ProjectReviews { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>().Property(user => user.Role).HasConversion<string>();
@@ -30,6 +31,24 @@ namespace StudentTeamPlatform.Api.Data
                         .WithMany()
                         .HasForeignKey(jr => jr.ProjectRoleId)
                         .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ProjectReview>()
+                .HasIndex(review => new { review.ProjectId, review.ReviewerId, review.RevieweeId })
+                .IsUnique();
+            modelBuilder.Entity<ProjectReview>()
+                .HasOne(review => review.Project)
+                .WithMany()
+                .HasForeignKey(review => review.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ProjectReview>()
+                .HasOne(review => review.Reviewer)
+                .WithMany()
+                .HasForeignKey(review => review.ReviewerId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ProjectReview>()
+                .HasOne(review => review.Reviewee)
+                .WithMany()
+                .HasForeignKey(review => review.RevieweeId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

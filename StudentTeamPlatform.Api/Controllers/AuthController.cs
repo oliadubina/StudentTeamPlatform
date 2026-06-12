@@ -2,6 +2,7 @@
 using StudentTeamPlatform.Api.Services;
 using StudentTeamPlatform.Api.DTO;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 namespace StudentTeamPlatform.Api.Controllers
 {
     [ApiController]
@@ -16,25 +17,36 @@ namespace StudentTeamPlatform.Api.Controllers
         [HttpPost("register")]
         public async Task <IActionResult> Register([FromBody]RegisterRequest registerRequest)
         {
-            var token= await _authService.Register(registerRequest);
-            if (token==null)
+            var authResponse= await _authService.Register(registerRequest);
+            if (authResponse==null)
             {
                 return BadRequest("Data is wrong");
                 
             }
-            return Ok("Registration has been succeeded");
+            return Ok(authResponse);
         }
         [HttpPost("login")]
         
         public async Task<IActionResult>Login([FromBody] LoginRequest loginRequest)
         {
-            var token = await _authService.Login(loginRequest);
-            if (token==null)
+            var authResponse = await _authService.Login(loginRequest);
+            if (authResponse==null)
             {
                 return BadRequest("Email or password aren`t correct");
             }
-            return Ok( token );
+            return Ok(authResponse);
         }
-        
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest refreshTokenRequest)
+        {
+            var authResponse = await _authService.RefreshToken(refreshTokenRequest.RefreshToken);
+            if (authResponse == null)
+            {
+                return Unauthorized("Refresh token is invalid or expired");
+            }
+
+            return Ok(authResponse);
+        }
     }
 }
